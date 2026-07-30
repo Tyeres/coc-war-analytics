@@ -1,2 +1,3 @@
-package PACKAGE_NAME;public class Controller {
+public class Controller {
+    static String API_KEY;
 }
