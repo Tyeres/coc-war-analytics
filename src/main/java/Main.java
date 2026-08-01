@@ -6,6 +6,8 @@ import org.json.simple.parser.ParseException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 
 public class Main {
@@ -30,14 +32,8 @@ public class Main {
         // Prepare a commandline process to retrieve the war JSON data
         BufferedReader reader = getBufferedReader();
 
-        StringBuilder result = new StringBuilder();
-        String line;
-
-        while ((line = reader.readLine()) != null) {
-            result.append(line).append("\n");
-        }
-
-        String strOutput = result.toString();
+        // Read the buffered reader
+        String strOutput = readBufferedReader(reader);
 
         // Parse the String into a JSON object
         JSONParser parser = new JSONParser();
@@ -46,21 +42,35 @@ public class Main {
 
     // Buffered reader for the API call
     private static BufferedReader getBufferedReader() throws IOException {
-        ProcessBuilder pb = new ProcessBuilder(
-                "curl",
-                "-H",
-                "Authorization: Bearer " + Controller.API_KEY,
-                "https://api.clashofclans.com/v1/clans/%23GOQ98RQL/currentwar"
+        String endpoint = "https://api.clashofclans.com/v1/clans/%23GOQ98RQL/currentwar";
+
+        URL url = new URL(endpoint);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+        conn.setRequestMethod("GET");
+        conn.setRequestProperty("Authorization", "Bearer " + Controller.API_KEY);
+        conn.setRequestProperty("Accept", "application/json");
+
+        int responseCode = conn.getResponseCode();
+
+        if (responseCode != 200) {
+            System.err.println("Connection failed. Check if current IP is allowed for the API key.\n" +
+                    "Response Code: " + responseCode);
+            System.exit(-1);
+        }
+
+        return new BufferedReader(
+                new InputStreamReader(conn.getInputStream())
         );
-
-        // Start the process
-        Process process = pb.start();
-
-        // Read the output
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        return reader;
     }
+    // Convert the buffered text to String
+    private static String readBufferedReader(BufferedReader reader) throws IOException {
+        StringBuilder result = new StringBuilder();
+        String line;
 
-
+        while ((line = reader.readLine()) != null) {
+            result.append(line).append("\n");
+        }
+        return result.toString();
+    }
 }
