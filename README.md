@@ -1,0 +1,1 @@
+This is a project relating to the video game Clash of Clans. This program periodically updates data in a database and stores clan war player history. This is to help clan leaders track the war performance of players and to help gauge the skill of its players. The program will automatically fetch and store data into the database. The project is not at all finished yet.
