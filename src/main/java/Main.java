@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.sql.SQLException;
 
 
 public class Main {
@@ -20,16 +21,22 @@ public class Main {
         Controller.API_KEY = dotenv.get("API_KEY");
 
         try {
-            System.out.println(fetchJSON());
+            JSONObject jsonObject = fetchJSON();
+            System.out.println(jsonObject);
+            System.out.println(jsonObject.get("state"));
+            JDBC databaseCon = new JDBC();
+            databaseCon.update(jsonObject);
         }
         catch (IOException | ParseException e) {
             e.printStackTrace();
             System.exit(-1);
+        } catch (SQLException e) {
+            throw new RuntimeException(e); // mySQL connection failed
         }
     }
 
     private static JSONObject fetchJSON() throws IOException, ParseException {
-        // Prepare a commandline process to retrieve the war JSON data
+        // Prepare to retrieve the war JSON data from the Clash API
         BufferedReader reader = getBufferedReader();
 
         // Read the buffered reader
