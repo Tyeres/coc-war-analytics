@@ -1,7 +1,7 @@
 CREATE TABLE WarParticipation (
     Player_tag VARCHAR(10) NOT NULL,
     Clan_war_id int NOT NULL,
-    Map_position int NOT NULL,
+    Map_position TINYINT NOT NULL,
     Town_hall_level TINYINT NOT NULL,
     PRIMARY KEY(Player_tag, Clan_war_id),
     FOREIGN KEY (Player_tag) REFERENCES Player(Player_tag) ON DELETE CASCADE,
