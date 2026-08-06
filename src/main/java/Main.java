@@ -27,11 +27,9 @@ public class Main {
             JDBC databaseCon = new JDBC();
             databaseCon.update(jsonObject);
         }
-        catch (IOException | ParseException e) {
+        catch (IOException | ParseException | SQLException e) {
             e.printStackTrace();
             System.exit(-1);
-        } catch (SQLException e) {
-            throw new RuntimeException(e); // mySQL connection failed
         }
     }
 
