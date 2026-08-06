@@ -69,7 +69,7 @@ public class JDBC {
             if (!resultSet.next()) {
                 // We need to add the user to the database
                 String playerName = (String) memberJSON.get("name");
-                statement.execute("INSERT INTO Player VALUES (" + playerTag + ", " + playerName + ");");
+                statement.execute("INSERT INTO Player VALUES ('" + playerTag + "', '" + playerName + "');");
                 System.out.println(ConsoleColors.BLUE + "Player " + playerName + ": " + playerTag + " added to the database." + ConsoleColors.RESET);
             }
             // If a result is found, nothing is done
