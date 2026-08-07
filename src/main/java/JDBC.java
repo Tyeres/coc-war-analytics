@@ -48,6 +48,8 @@ public class JDBC {
         updateEnemyClan(jsonObject);
         // Update the clan war in the database (update ClanWar table)
         updateClanWar(jsonObject);
+        // Update the WarParticipation table
+        updateWarParticipation(jsonObject);
     }
     // Any players in war that have never been added to the database must first be added
     // THIS METHOD IS UNTESTED!
@@ -112,6 +114,29 @@ public class JDBC {
                 warSize + ", '" + startTime + "', '" + endTime + "', '" + enemyClanTag + "');");
         System.out.println( ConsoleColors.GREEN + "Clan war table successfully updated." + ConsoleColors.RESET);
     }
+    // Updates the WarParticipation table in the database
+    // Method is untested
+    private void updateWarParticipation(JSONObject jsonObject) throws SQLException {
+        // Iterate through each player, because we are logging the war participation for each player in the clan war.
+        // Get the JSONArray of players
+        JSONArray jsonArrayOfPlayers = (JSONArray) ((JSONObject) jsonObject.get("clan")).get("members");
+        // Get the Clan_war_id for the current war
+        int warID = getClanWarID(jsonObject);
+        // Iterate through the array of players and add each of their clan war participation to the WarParticipation table in the database
+        int i = 0; // Counter to see how many times loop ran for analytics
+        for (Object playerObject : jsonArrayOfPlayers) {
+            // We cast the player json object to a json object
+            JSONObject jsonPlayer = (JSONObject) playerObject;
+            String playerTag = (String) jsonPlayer.get("tag");
+            int mapPos = (int) jsonPlayer.get("mapPosition");
+            int townHallLvl = (int) jsonPlayer.get("townhallLevel");
+            // Insert the data into the WarParticipation table
+            Statement statement = this.con.createStatement();
+            statement.execute("INSERT INTO WarParticipation VALUES ('" + playerTag + "', " + warID + ", " + mapPos + ", " + townHallLvl + ");");
+            i++; // Increment counter
+        }
+        System.out.println(ConsoleColors.GREEN + "WarParticipation table successfully updated by updating " + i + " times." + ConsoleColors.RESET);
+    }
     // This method returns true if the war participation table has already been updated with the current war. If so, then the current war has already been added to the database.
     private boolean checkClanWarUpdateStatus(JSONObject jsonObject) throws SQLException {
         // We need to know if the clan war has been added to the database already.
@@ -127,5 +152,15 @@ public class JDBC {
 
         // Return whether the current is in the database already or not.
         return resultSet.next();
+    }
+    // Returns the id for the current clan war
+    private int getClanWarID(JSONObject jsonObject) throws SQLException {
+        // We will find the clan war by using the startTime
+        String startTime = (String) jsonObject.get("startTime");
+        // Query for the ID using this startTime
+        Statement statement = this.con.createStatement();
+        ResultSet resultSet = statement.executeQuery("SELECT Clan_war_id FROM ClanWar WHERE War_start_time = '" + startTime + "';");
+        // JDBC’s ResultSet follows SQL conventions, where columns are numbered starting at 1.
+        return resultSet.getInt(1);
     }
 }
