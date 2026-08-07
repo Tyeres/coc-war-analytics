@@ -21,8 +21,6 @@ public class Main {
 
         try {
             JSONObject jsonObject = fetchJSON();
-            System.out.println(jsonObject);
-            System.out.println(jsonObject.get("state"));
             JDBC databaseCon = new JDBC();
             databaseCon.update(jsonObject);
         }

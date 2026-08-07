@@ -50,6 +50,8 @@ public class JDBC {
         updateClanWar(jsonObject);
         // Update the WarParticipation table
         updateWarParticipation(jsonObject);
+        // Update WarAttack table
+        updateWarAttack(jsonObject);
     }
     // Any players in war that have never been added to the database must first be added
     // THIS METHOD IS UNTESTED!
@@ -137,6 +139,48 @@ public class JDBC {
         }
         System.out.println(ConsoleColors.GREEN + "WarParticipation table successfully updated by updating " + i + " times." + ConsoleColors.RESET);
     }
+    // Update the WarAttack table.
+    // This method is untested.
+    private void updateWarAttack(JSONObject jsonObject) throws SQLException {
+        // Get the id of the war
+        int warID = getClanWarID(jsonObject);
+        // We need to iterate through the list of players
+        JSONArray listOfPlayers = (JSONArray) ((JSONObject) jsonObject.get("clan")).get("members");
+        // Iterate through the list
+        for (Object objPlayer : listOfPlayers) {
+            // It is a list of JSON objects. So, we need to cast the objPlayer
+            JSONObject jsonPlayer = (JSONObject) objPlayer;
+            // Get the player tag
+            String playerTag = (String) jsonPlayer.get("tag");
+            // We now have to iterate through the list of attacks
+            JSONArray listOfWarAttacks = (JSONArray) jsonPlayer.get("attacks");
+            // Counter for which attack this is.
+            /* I am doubtful this is an accurate way of knowing which attack number this is because I think the JSON
+            might randomize the order. However, the JSON does not seem to specify which attack this is any other way. */
+            int attackNumber = 0;
+            // If the player used no war attacks, this list should be empty
+            for (Object warAttackObject : listOfWarAttacks) {
+                // Cast because it is a list of JSON war attack objects
+                JSONObject warAttackJSON = (JSONObject) warAttackObject;
+                attackNumber++; // Increment
+                // Get the database fields
+                // The stars for the attack
+                int stars = (int) warAttackJSON.get("stars");
+                // Destruction percentage of the attack
+                int destructionPercentage = (int) warAttackJSON.get("destructionPercentage");
+                // This tells which total order of attacks this is. It is a war‑wide attack index, not per‑player and not per‑target.
+                int order = (int) warAttackJSON.get("order");
+                // The duration of the attacks in seconds
+                int duration = (int) warAttackJSON.get("duration");
+                // Insert the attack into the database
+                Statement statement = this.con.createStatement();
+                statement.execute("INSERT INTO WarAttack VALUES ('" + playerTag + "', " + warID + ", " + attackNumber + ", " +
+                        stars + ", " + destructionPercentage + ", " + order + ", " + duration + ");");
+                System.out.print(ConsoleColors.GREEN + "Attack " + attackNumber + " for Player " + playerTag + " added to WarAttack table successfully. | ");
+            }
+            System.out.println(ConsoleColors.RESET);
+        }
+    }
     // This method returns true if the war participation table has already been updated with the current war. If so, then the current war has already been added to the database.
     private boolean checkClanWarUpdateStatus(JSONObject jsonObject) throws SQLException {
         // We need to know if the clan war has been added to the database already.
@@ -154,13 +198,14 @@ public class JDBC {
         return resultSet.next();
     }
     // Returns the id for the current clan war
-    private int getClanWarID(JSONObject jsonObject) throws SQLException {
+    protected int getClanWarID(JSONObject jsonObject) throws SQLException {
         // We will find the clan war by using the startTime
         String startTime = (String) jsonObject.get("startTime");
         // Query for the ID using this startTime
         Statement statement = this.con.createStatement();
         ResultSet resultSet = statement.executeQuery("SELECT Clan_war_id FROM ClanWar WHERE War_start_time = '" + startTime + "';");
         // JDBC’s ResultSet follows SQL conventions, where columns are numbered starting at 1.
+        // TEST OF THIS USAGE OF THE GET METHOD IS HOW IS CORRECT
         return resultSet.getInt(1);
     }
 }
