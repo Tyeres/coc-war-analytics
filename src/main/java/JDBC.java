@@ -52,6 +52,7 @@ public class JDBC {
         updateWarParticipation(jsonObject);
         // Update WarAttack table
         updateWarAttack(jsonObject);
+        System.out.println(ConsoleColors.YELLOW + "Update completed with no problems." + ConsoleColors.RESET);
     }
     // Any players in war that have never been added to the database must first be added
     // THIS METHOD IS UNTESTED!
@@ -204,8 +205,10 @@ public class JDBC {
         // Query for the ID using this startTime
         Statement statement = this.con.createStatement();
         ResultSet resultSet = statement.executeQuery("SELECT Clan_war_id FROM ClanWar WHERE War_start_time = '" + startTime + "';");
+        // We have to move to the first index (default has none selected)
+        resultSet.next();
         // JDBC’s ResultSet follows SQL conventions, where columns are numbered starting at 1.
-        // TEST OF THIS USAGE OF THE GET METHOD IS HOW IS CORRECT
+        // We return the Clan_war_id, which is on column 1.
         return resultSet.getInt(1);
     }
 }

@@ -20,8 +20,11 @@ public class Main {
         Controller.API_KEY = dotenv.get("API_KEY");
 
         try {
+            // Fetch the JSON
             JSONObject jsonObject = fetchJSON();
+            // Create a new Java Database Connectivity class object
             JDBC databaseCon = new JDBC();
+            // Update the database
             databaseCon.update(jsonObject);
         }
         catch (Exception e) {
@@ -30,7 +33,7 @@ public class Main {
         }
     }
 
-    private static JSONObject fetchJSON() throws IOException, ParseException {
+    static JSONObject fetchJSON() throws IOException, ParseException {
         // Prepare to retrieve the war JSON data from the Clash API
         BufferedReader reader = getBufferedReader();
 
@@ -43,7 +46,7 @@ public class Main {
     }
 
     // Buffered reader for the API call
-    private static BufferedReader getBufferedReader() throws IOException {
+    static BufferedReader getBufferedReader() throws IOException {
         String endpoint = "https://api.clashofclans.com/v1/clans/%23GOQ98RQL/currentwar";
 
         URL url = new URL(endpoint);
@@ -66,7 +69,7 @@ public class Main {
         );
     }
     // Convert the buffered text to String
-    private static String readBufferedReader(BufferedReader reader) throws IOException {
+    static String readBufferedReader(BufferedReader reader) throws IOException {
         StringBuilder result = new StringBuilder();
         String line;
 
