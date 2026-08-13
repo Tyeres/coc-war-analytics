@@ -61,7 +61,6 @@ public class JDBC {
         JSONArray memberList = (JSONArray) (((JSONObject) jsonObject.get("clan")).get("members"));
         // Prepare an object for executing SQL queries
         Statement statement = this.con.createStatement();
-        System.out.println(memberList);
         // Check if each member is within the database. If not, add him.
         for (Object memberObject : memberList) {
             // Cast to JSONObject (we are iterating through a JSON array of JSON objects)
