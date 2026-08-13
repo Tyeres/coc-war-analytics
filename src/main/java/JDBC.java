@@ -52,7 +52,7 @@ public class JDBC {
         System.out.println("--------------------------");
         // Update WarAttack table
         updateWarAttack(jsonObject);
-        System.out.println(ConsoleColors.YELLOW + "Update completed with no problems." + ConsoleColors.RESET);
+        System.out.println(ConsoleColors.GREEN + "Update completed with no problems." + ConsoleColors.RESET);
     }
 
     // Any players in war that have never been added to the database must first be added
@@ -171,7 +171,7 @@ public class JDBC {
             /* I am doubtful this is an accurate way of knowing which attack number this is because I think the JSON
             might randomize the order. However, the JSON does not seem to specify which attack this is any other way. */
             int attackNumber = 0;
-            // If the player used no war attacks, this list should be empty
+            // If the player used no war attacks, no list is returned
             if (listOfWarAttacks != null) {
                 for (Object warAttackObject : listOfWarAttacks) {
                     // Cast because it is a list of JSON war attack objects
