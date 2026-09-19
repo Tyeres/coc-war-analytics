@@ -52,7 +52,7 @@ public class JDBC {
         System.out.println("--------------------------");
         // Update WarAttack table
         updateWarAttack(jsonObject);
-        System.out.println(ConsoleColors.GREEN + "Update completed with no problems." + ConsoleColors.RESET);
+        System.out.println(ConsoleColors.BLUE + "Update completed with no problems." + ConsoleColors.RESET);
     }
 
     // Any players in war that have never been added to the database must first be added
@@ -74,7 +74,7 @@ public class JDBC {
             // If a result was not found (the player was not found within the database)
             if (!resultSet.next()) {
                 statement.execute("INSERT INTO Player VALUES ('" + playerTag + "', '" + playerName + "');");
-                System.out.println(ConsoleColors.BLUE + "Player " + playerName + ": " + playerTag + " added to the database." + ConsoleColors.RESET);
+                System.out.println(ConsoleColors.GREEN + "Player " + playerName + ": " + playerTag + " added to the database." + ConsoleColors.RESET);
             } else {
                 System.out.println(ConsoleColors.BLUE + "Player " + playerName + " with tag " + playerTag + " already in database. No action taken." + ConsoleColors.RESET);
             }
@@ -107,7 +107,6 @@ public class JDBC {
     }
 
     // Adds the current clan war to the database.
-    // Method is currently untested
     private void updateClanWar(JSONObject jsonObject) throws SQLException {
         // The checkClanWarUpdateStatus method should have already been used before this to verify that the current clan
         // war has not been added to the database. This means we can assume we do not have to check for duplicates before SQL insertions.
@@ -223,7 +222,7 @@ public class JDBC {
         // Query for the ID using this startTime
         Statement statement = this.con.createStatement();
         ResultSet resultSet = statement.executeQuery("SELECT Clan_war_id FROM ClanWar WHERE War_start_time = '" + startTime + "';");
-        // We have to move to the first index (default has none selected)
+        // We have to move to the first row (default has none selected)
         resultSet.next();
         // JDBC’s ResultSet follows SQL conventions, where columns are numbered starting at 1.
         // We return the Clan_war_id, which is on column 1.

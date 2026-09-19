@@ -1,3 +1,26 @@
-This is a project relating to the video game Clash of Clans. This program is used to update data into a database and store clan war player history. This is to help clan leaders track the war performance of players and to help gauge the skill of its players. The database that the program was built to support was for mySQL.
+## Clash of Clans War Tracker
 
-To get this project working on your computer, first you need to create a mySQL database and create a database called "clash". You can configure your database login credentials by modifying the fields found in JDBC.java. In the ascending order listed in the DatabaseResources directory, create each table. Then, create a .env file (named exactly as such) in the project directory, and put your API key in it, formatted correctly. When creating your API key on the Clash of Clans developer website (https://developer.clashofclans.com/#/), make sure the API key is compatible with your IP, which can be found at https://api.ipify.org/. Lastly, if you want the program to track your own clan's stats, then go to the Clash of Clans documentation website (https://developer.clashofclans.com/#/documentation), click "Clans", click "GET /clans/{clanTag}/currentwar Retrieve information about clan's current clan war", insert your clan tag into the text field, click execute, then copy and paste your Request URL into the String _endpoint_ within the method getBufferedReader() in Main.java.
+This project supports the video game *Clash of Clans* by updating data into a database and storing clan war player history. It is designed to help clan leaders track player performance during wars and assess overall player skill. The program is built to support a MySQL database.
+
+### Setup Instructions
+
+1. **Create the database**
+   Create a MySQL database named `clash`.
+
+2. **Configure credentials**
+   Update your database login credentials in `JDBC.java`.
+
+3. **Create the tables**
+   Using the files in the `DatabaseResources` directory, create each table in the order listed (ascending).
+
+4. **Set up your API key**
+   Create a file named exactly `.env` in the project directory and add your API key in the correct format.
+
+   When generating your API key on the [Clash of Clans Developer Portal](https://developer.clashofclans.com/#/), ensure it is authorized for your current IP address. You can find your IP at [api.ipify.org](https://api.ipify.org/).
+
+5. **(Optional) Track your own clan's stats**
+   To enable tracking for your own clan:
+   - Visit the [Clash of Clans API documentation](https://developer.clashofclans.com/#/documentation).
+   - Navigate to **Clans** → **GET /clans/{clanTag}/currentwar** ("Retrieve information about clan's current clan war").
+   - Enter your clan tag and click **Execute**.
+   - Copy the resulting Request URL and paste it into the `endpoint` string within the `getBufferedReader()` method in `Main.java`.

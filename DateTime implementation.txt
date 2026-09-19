@@ -1,0 +1,18 @@
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+
+public class CoCDateConverter {
+
+    public static String convertToMySQLDateTime(String cocTimestamp) {
+        Instant instant = Instant.parse(cocTimestamp);
+        LocalDateTime ldt = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+        return ldt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    }
+// MySQL datatype: DATETIME
+    public static void main(String[] args) {
+        String input = "20260812T000612.000Z";
+        System.out.println(convertToMySQLDateTime(input));
+    }
+}

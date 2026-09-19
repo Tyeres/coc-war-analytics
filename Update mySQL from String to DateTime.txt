@@ -1,0 +1,5 @@
+UPDATE your_table
+SET war_start_dt = STR_TO_DATE(
+    REPLACE(REPLACE(war_start_string, 'T', ''), 'Z', ''),
+    '%Y%m%d%H%i%s.%f'
+);

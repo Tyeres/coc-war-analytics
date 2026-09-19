@@ -44,3 +44,4 @@ bin/
 ### Environment files ###
 .env
 .env.local
+ClashDatabase-1.0-SNAPSHOT.jar
