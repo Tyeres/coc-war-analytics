@@ -90,26 +90,32 @@ public class JDBC {
 
     // Updates the enemy clan into the database.
     private void updateEnemyClan(JSONObject jsonObject) throws SQLException {
-        // Get the war clan tag
+        // Get the opponent clan from the JSON
         JSONObject jsonOpponent = (JSONObject) jsonObject.get("opponent");
-        // Get the clan tag
-        String enemyClanTag = (String) (jsonOpponent.get("tag"));
-        // Get the clan name
+        String enemyClanTag = (String) jsonOpponent.get("tag");
         String clanName = (String) jsonOpponent.get("name");
 
-        // Prepare an object for executing SQL queries
-        Statement statement = this.con.createStatement();
+        String selectSql = "SELECT 1 FROM EnemyClan WHERE Enemy_clan_tag = ?";
+        String insertSql = "INSERT INTO EnemyClan (Enemy_clan_tag, Enemy_clan_name) VALUES (?, ?)";
 
         // Check if the enemy clan is within the database. If not, add the clan.
-        ResultSet resultSet = statement.executeQuery("SELECT * FROM EnemyClan WHERE Enemy_clan_tag = '" + enemyClanTag + "';");
-        // If a result is not found, then add the clan into the database. If so, do not add it; we have no reason to because it's already in the database.
-        if (!resultSet.next()) {
-            statement.execute("INSERT INTO EnemyClan VALUES ('" + enemyClanTag + "', '" + clanName + "');");
-            System.out.println(ConsoleColors.GREEN + "Clan " + clanName + ": " + enemyClanTag + " added to the database." + ConsoleColors.RESET);
-        } else {
-            System.out.println(ConsoleColors.GREEN + "Clan: " + clanName + " with tag " + enemyClanTag + " already in database. No action taken." + ConsoleColors.RESET);
+        try (PreparedStatement select = this.con.prepareStatement(selectSql)) {
+            select.setString(1, enemyClanTag);
+            try (ResultSet resultSet = select.executeQuery()) {
+                if (!resultSet.next()) {
+                    // Not found, so add it
+                    try (PreparedStatement insert = this.con.prepareStatement(insertSql)) {
+                        insert.setString(1, enemyClanTag);
+                        insert.setString(2, clanName);
+                        insert.executeUpdate();
+                    }
+                    System.out.println(ConsoleColors.GREEN + "Clan " + clanName + ": " + enemyClanTag + " added to the database." + ConsoleColors.RESET);
+                } else {
+                    // Found. This clan was fought before, so do nothing.
+                    System.out.println(ConsoleColors.BLUE + "Clan " + clanName + " with tag " + enemyClanTag + " already in database. No action taken." + ConsoleColors.RESET);
+                }
+            }
         }
-        // A match was found. This clan was fought before. Do nothing.
     }
 
     // Adds the current clan war to the database.
