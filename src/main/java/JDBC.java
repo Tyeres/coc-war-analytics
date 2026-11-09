@@ -128,10 +128,16 @@ public class JDBC {
         String startTime = (String) jsonObject.get("startTime");
         String endTime = (String) jsonObject.get("endTime");
         String enemyClanTag = (String) ((JSONObject) jsonObject.get("opponent")).get("tag");
+
         // Add all the fields to the database
-        Statement statement = this.con.createStatement();
-        statement.execute("INSERT INTO ClanWar (War_size, War_start_time, War_end_time, Enemy_clan_tag) VALUES (" +
-                warSize + ", '" + startTime + "', '" + endTime + "', '" + enemyClanTag + "');");
+        String sql = "INSERT INTO ClanWar (War_size, War_start_time, War_end_time, Enemy_clan_tag) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+            preparedStatement.setInt(1, warSize);
+            preparedStatement.setString(2, startTime);
+            preparedStatement.setString(3, endTime);
+            preparedStatement.setString(4, enemyClanTag);
+            preparedStatement.executeUpdate();
+        }
         System.out.println(ConsoleColors.GREEN + "Clan war table successfully updated." + ConsoleColors.RESET);
     }
 
