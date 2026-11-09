@@ -150,20 +150,44 @@ public class JDBC {
         JSONArray jsonArrayOfPlayers = (JSONArray) ((JSONObject) jsonObject.get("clan")).get("members");
         // Get the Clan_war_id for the current war
         int warID = getClanWarID(jsonObject);
-        // Iterate through the array of players and add each of their clan war participation to the WarParticipation table in the database
+
+        String sql = "INSERT INTO WarParticipation (Player_tag, Clan_war_id, Map_position, Town_hall_level) VALUES (?, ?, ?, ?)";
+
+        // Start a transaction so that either every player's participation is saved, or none of it is
+        this.con.setAutoCommit(false);
         int i = 0; // Counter to see how many times loop ran for analytics
-        for (Object playerObject : jsonArrayOfPlayers) {
-            // We cast the player json object to a json object
-            JSONObject jsonPlayer = (JSONObject) playerObject;
-            String playerTag = (String) jsonPlayer.get("tag");
-            // The API returns a long when this should be an int
-            int mapPos = (int) ((long) jsonPlayer.get("mapPosition"));
-            // The API returns a long when this should be an int
-            int townHallLvl = (int) ((long) jsonPlayer.get("townhallLevel"));
-            // Insert the data into the WarParticipation table
-            Statement statement = this.con.createStatement();
-            statement.execute("INSERT INTO WarParticipation VALUES ('" + playerTag + "', " + warID + ", " + mapPos + ", " + townHallLvl + ");");
-            i++; // Increment counter
+        try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+            // Iterate through the array of players and add each of their clan war participation to the batch
+            for (Object playerObject : jsonArrayOfPlayers) {
+                // We cast the player json object to a json object
+                JSONObject jsonPlayer = (JSONObject) playerObject;
+                String playerTag = (String) jsonPlayer.get("tag");
+                // The API returns a long when this should be an int
+                int mapPos = (int) ((long) jsonPlayer.get("mapPosition"));
+                // The API returns a long when this should be an int
+                int townHallLvl = (int) ((long) jsonPlayer.get("townhallLevel"));
+                // Queue the data to be inserted into the WarParticipation table
+                preparedStatement.setString(1, playerTag);
+                preparedStatement.setInt(2, warID);
+                preparedStatement.setInt(3, mapPos);
+                preparedStatement.setInt(4, townHallLvl);
+                preparedStatement.addBatch();
+                i++; // Increment counter
+            }
+            // Send all the queued inserts to the database at once, then make them permanent
+            preparedStatement.executeBatch();
+            this.con.commit();
+        } catch (SQLException | RuntimeException e) {
+            // Something went wrong, so undo any inserts from this method
+            try {
+                this.con.rollback();
+            } catch (SQLException rollbackException) {
+                e.addSuppressed(rollbackException);
+            }
+            throw e;
+        } finally {
+            // Restore auto commit whether we succeeded or failed
+            this.con.setAutoCommit(true);
         }
         System.out.println(ConsoleColors.GREEN + "WarParticipation table successfully updated by updating " + i + " times." + ConsoleColors.RESET);
     }
@@ -206,11 +230,10 @@ public class JDBC {
                     Statement statement = this.con.createStatement();
                     statement.execute("INSERT INTO WarAttack VALUES ('" + playerTag + "', " + warID + ", " + attackNumber + ", " +
                             stars + ", " + destructionPercentage + ", " + order + ", " + duration + ");");
-                    System.out.print(ConsoleColors.GREEN + "Attack " + attackNumber + " for Player " + playerTag + ": " + playerName +" added to WarAttack table successfully. | ");
+                    System.out.print(ConsoleColors.GREEN + "Attack " + attackNumber + " for Player " + playerTag + ": " + playerName + " added to WarAttack table successfully. | ");
                 }
                 System.out.println(ConsoleColors.RESET);
-            }
-            else {
+            } else {
                 System.out.println(ConsoleColors.RED + jsonPlayer.get("name") + " missed his war attack. No war attacks added for him." + ConsoleColors.RESET);
             }
         }
