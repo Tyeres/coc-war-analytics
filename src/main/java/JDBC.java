@@ -59,26 +59,32 @@ public class JDBC {
     private void updatePlayerRecord(JSONObject jsonObject) throws SQLException {
         // Get the member list from the JSON
         JSONArray memberList = (JSONArray) (((JSONObject) jsonObject.get("clan")).get("members"));
-        // Prepare an object for executing SQL queries
-        Statement statement = this.con.createStatement();
-        // Check if each member is within the database. If not, add him.
-        for (Object memberObject : memberList) {
-            // Cast to JSONObject (we are iterating through a JSON array of JSON objects)
-            JSONObject memberJSON = (JSONObject) memberObject;
-            // Get the player tag
-            String playerTag = (String) memberJSON.get("tag");
-            // Get the player name
-            String playerName = (String) memberJSON.get("name");
-            // Query
-            ResultSet resultSet = statement.executeQuery("SELECT * FROM Player WHERE Player_tag = '" + playerTag + "';");
-            // If a result was not found (the player was not found within the database)
-            if (!resultSet.next()) {
-                statement.execute("INSERT INTO Player VALUES ('" + playerTag + "', '" + playerName + "');");
-                System.out.println(ConsoleColors.GREEN + "Player " + playerName + ": " + playerTag + " added to the database." + ConsoleColors.RESET);
-            } else {
-                System.out.println(ConsoleColors.BLUE + "Player " + playerName + " with tag " + playerTag + " already in database. No action taken." + ConsoleColors.RESET);
+
+        String selectSql = "SELECT 1 FROM Player WHERE Player_tag = ?";
+        String insertSql = "INSERT INTO Player (Player_tag, Player_name) VALUES (?, ?)";
+
+        try (PreparedStatement select = this.con.prepareStatement(selectSql);
+             PreparedStatement insert = this.con.prepareStatement(insertSql)) {
+            // Check if each member is within the database. If not, add him.
+            for (Object memberObject : memberList) {
+                // Cast to JSONObject (we are iterating through a JSON array of JSON objects)
+                JSONObject memberJSON = (JSONObject) memberObject;
+                String playerTag = (String) memberJSON.get("tag");
+                String playerName = (String) memberJSON.get("name");
+
+                select.setString(1, playerTag);
+                try (ResultSet resultSet = select.executeQuery()) {
+                    // If a result was not found (the player was not found within the database)
+                    if (!resultSet.next()) {
+                        insert.setString(1, playerTag);
+                        insert.setString(2, playerName);
+                        insert.executeUpdate();
+                        System.out.println(ConsoleColors.GREEN + "Player " + playerName + ": " + playerTag + " added to the database." + ConsoleColors.RESET);
+                    } else {
+                        System.out.println(ConsoleColors.BLUE + "Player " + playerName + " with tag " + playerTag + " already in database. No action taken." + ConsoleColors.RESET);
+                    }
+                }
             }
-            // If a result is found, nothing is done
         }
     }
 
