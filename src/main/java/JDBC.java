@@ -270,30 +270,38 @@ public class JDBC {
     private boolean checkClanWarUpdateStatus(JSONObject jsonObject) throws SQLException {
         // We need to know if the clan war has been added to the database already.
         // We will do this by checking if there is a clan war with the same start time as the current clan war
-        String startTime = (String) jsonObject.get("startTime");
-
-        // Prepare an object for executing SQL query
-        Statement statement = this.con.createStatement();
+        String startTime = (String) jsonObject.get("startTime"); // TODO This datatype will need updating when times are no longer saved as strings
 
         // Check if the clan war has already been added to the database.
-        // It really does not matter what we select. We just need to know if a result is found.
-        ResultSet resultSet = statement.executeQuery("SELECT War_start_time FROM ClanWar WHERE War_start_time = '" + startTime + "';");
-
-        // Return whether the current is in the database already or not.
-        return resultSet.next();
+        // We just need to know if a result is found.
+        String sql = "SELECT 1 FROM ClanWar WHERE War_start_time = ?";
+        try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+            preparedStatement.setString(1, startTime); // TODO This datatype will need to be converted when the times are changed away from strings
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                // Return whether the current war is in the database already or not.
+                return resultSet.next();
+            }
+        }
     }
 
     // Returns the id for the current clan war
     protected int getClanWarID(JSONObject jsonObject) throws SQLException {
         // We will find the clan war by using the startTime
-        String startTime = (String) jsonObject.get("startTime");
+        String startTime = (String) jsonObject.get("startTime"); // TODO Data type will need converting
         // Query for the ID using this startTime
-        Statement statement = this.con.createStatement();
-        ResultSet resultSet = statement.executeQuery("SELECT Clan_war_id FROM ClanWar WHERE War_start_time = '" + startTime + "';");
-        // We have to move to the first row (default has none selected)
-        resultSet.next();
-        // JDBC’s ResultSet follows SQL conventions, where columns are numbered starting at 1.
-        // We return the Clan_war_id, which is on column 1.
-        return resultSet.getInt(1);
+        String sql = "SELECT Clan_war_id FROM ClanWar WHERE War_start_time = ?";
+        try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+            preparedStatement.setString(1, startTime); // TODO Datatype will need converting
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                // We have to move to the first row (default has none selected)
+                if (resultSet.next()) {
+                    // JDBC's ResultSet follows SQL conventions, where columns are numbered starting at 1.
+                    // We return the Clan_war_id, which is on column 1.
+                    return resultSet.getInt(1);
+                }
+                // No war with this start time exists, so there is no ID to return
+                throw new SQLException("No clan war found with start time " + startTime);
+            }
+        }
     }
 }
