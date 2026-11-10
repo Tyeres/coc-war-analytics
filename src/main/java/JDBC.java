@@ -198,44 +198,71 @@ public class JDBC {
         int warID = getClanWarID(jsonObject);
         // We need to iterate through the list of players
         JSONArray listOfPlayers = (JSONArray) ((JSONObject) jsonObject.get("clan")).get("members");
-        // Iterate through the list
-        for (Object objPlayer : listOfPlayers) {
-            // It is a list of JSON objects. So, we need to cast the objPlayer
-            JSONObject jsonPlayer = (JSONObject) objPlayer;
-            // Get the player tag
-            String playerTag = (String) jsonPlayer.get("tag");
-            String playerName = (String) jsonPlayer.get("name");
-            // We now have to iterate through the list of attacks
-            JSONArray listOfWarAttacks = (JSONArray) jsonPlayer.get("attacks");
-            // Counter for which attack this is.
+
+        String sql = "INSERT INTO WarAttack (Player_tag, Clan_war_id, War_attack_number, Stars, Destruction_percentage, Order_, Duration) VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        // Start a transaction so that either every attack in the war is saved, or none of them are
+        this.con.setAutoCommit(false);
+        try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
+            // Iterate through the list
+            for (Object objPlayer : listOfPlayers) {
+                // It is a list of JSON objects. So, we need to cast the objPlayer
+                JSONObject jsonPlayer = (JSONObject) objPlayer;
+                // Get the player tag
+                String playerTag = (String) jsonPlayer.get("tag");
+                String playerName = (String) jsonPlayer.get("name");
+                // We now have to iterate through the list of attacks
+                JSONArray listOfWarAttacks = (JSONArray) jsonPlayer.get("attacks");
+                // Counter for which attack this is.
             /* I am doubtful this is an accurate way of knowing which attack number this is because I think the JSON
             might randomize the order. However, the JSON does not seem to specify which attack this is any other way. */
-            int attackNumber = 0;
-            // If the player used no war attacks, no list is returned
-            if (listOfWarAttacks != null) {
-                for (Object warAttackObject : listOfWarAttacks) {
-                    // Cast because it is a list of JSON war attack objects
-                    JSONObject warAttackJSON = (JSONObject) warAttackObject;
-                    attackNumber++; // Increment
-                    // Get the database fields
-                    // The stars for the attack
-                    int stars = (int) ((long) warAttackJSON.get("stars"));
-                    // Destruction percentage of the attack
-                    int destructionPercentage = (int) ((long) warAttackJSON.get("destructionPercentage"));
-                    // This tells which total order of attacks this is. It is a war‑wide attack index, not per‑player and not per‑target.
-                    int order = (int) ((long) warAttackJSON.get("order"));
-                    // The duration of the attacks in seconds
-                    int duration = (int) ((long) warAttackJSON.get("duration"));
-                    // Insert the attack into the database
-                    Statement statement = this.con.createStatement();
-                    statement.execute("INSERT INTO WarAttack VALUES ('" + playerTag + "', " + warID + ", " + attackNumber + ", " +
-                            stars + ", " + destructionPercentage + ", " + order + ", " + duration + ");");
-                    System.out.print(ConsoleColors.GREEN + "Attack " + attackNumber + " for Player " + playerTag + ": " + playerName + " added to WarAttack table successfully. | ");
+                int attackNumber = 0;
+                // If the player used no war attacks, no list is returned
+                if (listOfWarAttacks != null) {
+                    for (Object warAttackObject : listOfWarAttacks) {
+                        // Cast because it is a list of JSON war attack objects
+                        JSONObject warAttackJSON = (JSONObject) warAttackObject;
+                        attackNumber++; // Increment
+                        // Get the database fields
+                        // The stars for the attack
+                        int stars = (int) ((long) warAttackJSON.get("stars"));
+                        // Destruction percentage of the attack
+                        int destructionPercentage = (int) ((long) warAttackJSON.get("destructionPercentage"));
+                        // This tells which total order of attacks this is. It is a war‑wide attack index, not per‑player and not per‑target.
+                        int order = (int) ((long) warAttackJSON.get("order"));
+                        // The duration of the attacks in seconds
+                        int duration = (int) ((long) warAttackJSON.get("duration"));
+                        // Queue the attack to be inserted into the database
+                        preparedStatement.setString(1, playerTag);
+                        preparedStatement.setInt(2, warID);
+                        preparedStatement.setInt(3, attackNumber);
+                        preparedStatement.setInt(4, stars);
+                        preparedStatement.setInt(5, destructionPercentage);
+                        preparedStatement.setInt(6, order);
+                        preparedStatement.setInt(7, duration);
+                        preparedStatement.addBatch();
+                        System.out.print(ConsoleColors.GREEN + "Attack " + attackNumber + " for Player " + playerTag + ": " + playerName + " queued for WarAttack table. | ");
+                    }
+                    System.out.println(ConsoleColors.RESET);
+                } else {
+                    System.out.println(ConsoleColors.RED + jsonPlayer.get("name") + " missed his war attack. No war attacks added for him." + ConsoleColors.RESET);
                 }
-                System.out.println(ConsoleColors.RESET);
-            } else {
-                System.out.println(ConsoleColors.RED + jsonPlayer.get("name") + " missed his war attack. No war attacks added for him." + ConsoleColors.RESET);
             }
+            // Send all the queued inserts to the database at once, then make them permanent
+            preparedStatement.executeBatch();
+            this.con.commit();
+            System.out.println(ConsoleColors.GREEN + "WarAttack table successfully updated." + ConsoleColors.RESET);
+        } catch (SQLException | RuntimeException e) {
+            // Something went wrong, so undo any inserts from this method
+            try {
+                this.con.rollback();
+            } catch (SQLException rollbackException) {
+                e.addSuppressed(rollbackException);
+            }
+            throw e;
+        } finally {
+            // Restore auto commit whether we succeeded or failed
+            this.con.setAutoCommit(true);
         }
     }
 
