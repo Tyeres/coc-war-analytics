@@ -27,7 +27,9 @@ public class JDBC {
     }
 
 
-    // Add the newest war to the database
+    /**
+     * Add the newest war to the database
+     */
     public void update(JSONObject jsonObject) throws SQLException {
         // Do not add any data to the database unless the war has ended.
         if (!jsonObject.get("state").equals("warEnded")) {
@@ -39,24 +41,40 @@ public class JDBC {
             System.out.println("The current clan war has already been added to the database. No updates completed.");
             return;
         }
-        // Update list of players (update Player table)
-        updatePlayerRecord(jsonObject);
-        System.out.println("--------------------------");
-        // Update the enemy clan into the database (update EnemyClan table)
-        updateEnemyClan(jsonObject);
-        System.out.println("--------------------------");
-        // Update the clan war in the database (update ClanWar table)
-        updateClanWar(jsonObject);
-        System.out.println("--------------------------");
-        // Update the WarParticipation table
-        updateWarParticipation(jsonObject);
-        System.out.println("--------------------------");
-        // Update WarAttack table
-        updateWarAttack(jsonObject);
-        System.out.println(ConsoleColors.BLUE + "Update completed with no problems." + ConsoleColors.RESET);
+        // Do not commit anything until done.
+        this.con.setAutoCommit(false);
+        try {
+            // Update list of players (update Player table)
+            updatePlayerRecord(jsonObject);
+            System.out.println("--------------------------");
+            // Update the enemy clan into the database (update EnemyClan table)
+            updateEnemyClan(jsonObject);
+            System.out.println("--------------------------");
+            // Update the clan war in the database (update ClanWar table)
+            updateClanWar(jsonObject);
+            System.out.println("--------------------------");
+            // Update the WarParticipation table
+            updateWarParticipation(jsonObject);
+            System.out.println("--------------------------");
+            // Update WarAttack table
+            updateWarAttack(jsonObject);
+            this.con.commit();
+            System.out.println(ConsoleColors.BLUE + "Update completed with no problems." + ConsoleColors.RESET);
+        } catch (SQLException | RuntimeException e) {
+            try {
+                this.con.rollback();
+            } catch (SQLException rollbackException) {
+                e.addSuppressed(rollbackException);
+            }
+            throw e;
+        } finally {
+            this.con.setAutoCommit(true);
+        }
     }
 
-    // Any players in war that have never been added to the database must first be added
+    /**
+     * Any players in war that have never been added to the database must first be added
+     */
     private void updatePlayerRecord(JSONObject jsonObject) throws SQLException {
         // Get the member list from the JSON
         JSONArray memberList = (JSONArray) (((JSONObject) jsonObject.get("clan")).get("members"));
@@ -155,8 +173,6 @@ public class JDBC {
 
         String sql = "INSERT INTO WarParticipation (Player_tag, Clan_war_id, Map_position, Town_hall_level) VALUES (?, ?, ?, ?)";
 
-        // Start a transaction so that either every player's participation is saved, or none of it is
-        this.con.setAutoCommit(false);
         int i = 0; // Counter to see how many times loop ran for analytics
         try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
             // Iterate through the array of players and add each of their clan war participation to the batch
@@ -178,18 +194,6 @@ public class JDBC {
             }
             // Send all the queued inserts to the database at once, then make them permanent
             preparedStatement.executeBatch();
-            this.con.commit();
-        } catch (SQLException | RuntimeException e) {
-            // Something went wrong, so undo any inserts from this method
-            try {
-                this.con.rollback();
-            } catch (SQLException rollbackException) {
-                e.addSuppressed(rollbackException);
-            }
-            throw e;
-        } finally {
-            // Restore auto commit whether we succeeded or failed
-            this.con.setAutoCommit(true);
         }
         System.out.println(ConsoleColors.GREEN + "WarParticipation table successfully updated by updating " + i + " times." + ConsoleColors.RESET);
     }
@@ -203,8 +207,6 @@ public class JDBC {
 
         String sql = "INSERT INTO WarAttack (Player_tag, Clan_war_id, War_attack_number, Stars, Destruction_percentage, Order_, Duration) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-        // Start a transaction so that either every attack in the war is saved, or none of them are
-        this.con.setAutoCommit(false);
         try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
             // Iterate through the list
             for (Object objPlayer : listOfPlayers) {
@@ -252,19 +254,7 @@ public class JDBC {
             }
             // Send all the queued inserts to the database at once, then make them permanent
             preparedStatement.executeBatch();
-            this.con.commit();
             System.out.println(ConsoleColors.GREEN + "WarAttack table successfully updated." + ConsoleColors.RESET);
-        } catch (SQLException | RuntimeException e) {
-            // Something went wrong, so undo any inserts from this method
-            try {
-                this.con.rollback();
-            } catch (SQLException rollbackException) {
-                e.addSuppressed(rollbackException);
-            }
-            throw e;
-        } finally {
-            // Restore auto commit whether we succeeded or failed
-            this.con.setAutoCommit(true);
         }
     }
 

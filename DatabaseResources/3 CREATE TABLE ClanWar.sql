@@ -1,6 +1,7 @@
 CREATE TABLE ClanWar (
     Clan_war_id int AUTO_INCREMENT PRIMARY KEY,
     War_size int NOT NULL,
+    -- UTC times
     War_start_time DATETIME(3) UNIQUE NOT NULL,
     War_end_time DATETIME(3) UNIQUE NOT NULL,
     Enemy_clan_tag VARCHAR(30) NOT NULL,
