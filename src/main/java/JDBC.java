@@ -3,6 +3,7 @@
 import org.json.simple.*;
 
 import java.sql.*;
+import java.time.LocalDateTime;
 
 // Java Database Connectivity class.
 public class JDBC {
@@ -125,16 +126,17 @@ public class JDBC {
 
         // The API returns a long when this should really be an int. We just cast it.
         int warSize = (int) ((long) jsonObject.get("teamSize"));
-        String startTime = (String) jsonObject.get("startTime");
-        String endTime = (String) jsonObject.get("endTime");
+        // The JSON times are returned as Strings. We must convert them to LocalDateTime.
+        LocalDateTime startTime = TimeConverter.toLocalDateTime((String) jsonObject.get("startTime"));
+        LocalDateTime endTime = TimeConverter.toLocalDateTime((String) jsonObject.get("endTime"));
         String enemyClanTag = (String) ((JSONObject) jsonObject.get("opponent")).get("tag");
 
         // Add all the fields to the database
         String sql = "INSERT INTO ClanWar (War_size, War_start_time, War_end_time, Enemy_clan_tag) VALUES (?, ?, ?, ?)";
         try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
             preparedStatement.setInt(1, warSize);
-            preparedStatement.setString(2, startTime);
-            preparedStatement.setString(3, endTime);
+            preparedStatement.setObject(2, startTime); // LocalDateTime
+            preparedStatement.setObject(3, endTime); // LocalDateTime
             preparedStatement.setString(4, enemyClanTag);
             preparedStatement.executeUpdate();
         }
@@ -266,17 +268,19 @@ public class JDBC {
         }
     }
 
-    // This method returns true if the war participation table has already been updated with the current war. If so, then the current war has already been added to the database.
+    /**
+    This method returns true if the clan war table has already been updated with the current war. If so, then the current war has already been added to the database.
+     */
     private boolean checkClanWarUpdateStatus(JSONObject jsonObject) throws SQLException {
         // We need to know if the clan war has been added to the database already.
         // We will do this by checking if there is a clan war with the same start time as the current clan war
-        String startTime = (String) jsonObject.get("startTime"); // TODO This datatype will need updating when times are no longer saved as strings
+        LocalDateTime startTime = TimeConverter.toLocalDateTime((String) jsonObject.get("startTime"));
 
         // Check if the clan war has already been added to the database.
         // We just need to know if a result is found.
         String sql = "SELECT 1 FROM ClanWar WHERE War_start_time = ?";
         try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
-            preparedStatement.setString(1, startTime); // TODO This datatype will need to be converted when the times are changed away from strings
+            preparedStatement.setObject(1, startTime); // LocalDateTime
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 // Return whether the current war is in the database already or not.
                 return resultSet.next();
@@ -284,14 +288,17 @@ public class JDBC {
         }
     }
 
-    // Returns the id for the current clan war
+    /**
+     *
+     * Returns the id for the current clan war
+     */
     protected int getClanWarID(JSONObject jsonObject) throws SQLException {
         // We will find the clan war by using the startTime
-        String startTime = (String) jsonObject.get("startTime"); // TODO Data type will need converting
+        LocalDateTime startTime = TimeConverter.toLocalDateTime((String) jsonObject.get("startTime"));
         // Query for the ID using this startTime
         String sql = "SELECT Clan_war_id FROM ClanWar WHERE War_start_time = ?";
         try (PreparedStatement preparedStatement = this.con.prepareStatement(sql)) {
-            preparedStatement.setString(1, startTime); // TODO Datatype will need converting
+            preparedStatement.setObject(1, startTime); // LocalDateTime
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 // We have to move to the first row (default has none selected)
                 if (resultSet.next()) {
